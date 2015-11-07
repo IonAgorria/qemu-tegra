@@ -755,6 +755,8 @@ typedef struct CPUArchState {
         uint32_t ctrl;
     } sau;
 
+    hwaddr (*translate_addr)(hwaddr addr, int access_type);
+
 #if !defined(CONFIG_USER_ONLY)
     NVICState *nvic;
     const struct arm_boot_info *boot_info;

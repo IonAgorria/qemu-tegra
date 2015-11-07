@@ -3275,6 +3275,10 @@ static bool get_phys_addr_disabled(CPUARMState *env,
         break;
     }
 
+    if (env->translate_addr) {
+        address = env->translate_addr(address, access_type);
+    }
+
     result->f.phys_addr = address;
     result->f.prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
     result->f.lg_page_size = TARGET_PAGE_BITS;
