@@ -187,13 +187,13 @@ static hwaddr tegra_cop_mmu_translate(hwaddr addr, int access_type)
 static void tegra_cop_mmu_priv_realize(DeviceState *dev, Error **errp)
 {
     tegra_cop_mmu *s = TEGRA_COP_MMU(dev);
-    //CPUState *cs = qemu_get_cpu(TEGRA2_COP);
+    CPUState *cs = qemu_get_cpu(TEGRA2_COP);
 
     memory_region_init_io(&s->iomem, OBJECT(dev), &tegra_cop_mmu_mem_ops, s,
                           "tegra.cop_mmu", SZ_64K);
     sysbus_init_mmio(SYS_BUS_DEVICE(dev), &s->iomem);
 
-    //ARM_CPU(cs)->translate_addr = tegra_cop_mmu_translate;
+    ARM_CPU(cs)->env.translate_addr = tegra_cop_mmu_translate;
 }
 
 static void tegra_cop_mmu_class_init(ObjectClass *klass, void *data)
