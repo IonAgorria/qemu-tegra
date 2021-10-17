@@ -431,7 +431,7 @@ static void tegra2_init(MachineState *machine)
     /* UARTD controller */
 //     sysbus_create_simple("tegra.uart", TEGRA_UARTA_BASE, DIRQ(INT_UARTA));
     tegra_uartd_dev = serial_mm_init(sysmem, TEGRA_UARTD_BASE, 2,
-                                     DIRQ(INT_UARTD), 115200,
+                                     DIRQ(INT_UARTD), 115200 * 100,
                                      serial_hd(0),
                                      DEVICE_LITTLE_ENDIAN);
 
