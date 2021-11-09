@@ -19,6 +19,7 @@
 
 #include "tegra_common.h"
 
+#include "hw/usb/chipidea.h"
 #include "hw/usb/hcd-ehci.h"
 
 #include "usb.h"
@@ -29,7 +30,7 @@
 #define DEFINE_REG32(reg) reg##_t reg
 
 typedef struct tegra_usb_state {
-    EHCISysBusState parent_obj;
+    ChipideaState parent_obj;
 
     DEFINE_REG32(usb1_if_usb_susp_ctrl);
 
@@ -41,7 +42,7 @@ static const VMStateDescription vmstate_tegra_usb = {
     .version_id = 1,
     .minimum_version_id = 1,
     .fields = (VMStateField[]) {
-        VMSTATE_STRUCT(ehci, EHCISysBusState, 2, vmstate_ehci, EHCIState),
+        VMSTATE_STRUCT(parent_obj.ehci, ChipideaState, 2, vmstate_ehci, EHCIState),
         VMSTATE_UINT32(usb1_if_usb_susp_ctrl.reg32, tegra_usb),
         VMSTATE_END_OF_LIST()
     }
@@ -132,14 +133,12 @@ static void tegra_usb_class_init(ObjectClass *klass, void *data)
     dc->vmsd = &vmstate_tegra_usb;
     dc->reset = tegra_usb_priv_reset;
 
-    sec->capsbase  = 0x100;
-    sec->opregbase = 0x140;
-    set_bit(DEVICE_CATEGORY_USB, dc->categories);
+    sec->portnr = NB_PORTS;
 }
 
 static const TypeInfo tegra_usb_info = {
     .name = TYPE_TEGRA_USB,
-    .parent = TYPE_SYS_BUS_EHCI,
+    .parent = TYPE_CHIPIDEA,
     .instance_size = sizeof(tegra_usb),
     .instance_init = tegra_usb_priv_init,
     .class_init = tegra_usb_class_init,
