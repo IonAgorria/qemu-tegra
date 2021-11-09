@@ -31,6 +31,8 @@ Kernel and device-tree are available at `<https://github.com/grate-driver/linux>
 
 U-Boot is available at `<https://github.com/grate-driver/u-boot>`_, use ``qemu_tegra2_defconfig``.
 
+GPIO buttons are mapped to Enter/Up/Down keys, remove ``-device usb-kbd`` to activate the buttons.
+
 ===========
 QEMU README
 ===========
