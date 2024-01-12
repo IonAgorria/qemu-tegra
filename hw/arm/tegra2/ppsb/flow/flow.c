@@ -673,7 +673,7 @@ static void tegra_flow_priv_realize(DeviceState *dev, Error **errp)
         arg->cpu_id = i;
 
         s->ptimer[i] = ptimer_init(tegra_flow_timer_event, arg,
-                                   PTIMER_POLICY_DEFAULT);
+                                   PTIMER_POLICY_CONTINUOUS_TRIGGER);
         ptimer_transaction_begin(s->ptimer[i]);
         ptimer_set_freq(s->ptimer[i], 1000000);
         ptimer_transaction_commit(s->ptimer[i]);
