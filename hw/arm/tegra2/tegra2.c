@@ -485,12 +485,30 @@ static void tegra2_init(MachineState *machine)
     tegra_timer_devs[3] = sysbus_create_simple("tegra.timer",
                                             TEGRA_TMR4_BASE, DIRQ(INT_TMR4));
 
-    /* UARTD controller */
-//     sysbus_create_simple("tegra.uart", TEGRA_UARTA_BASE, DIRQ(INT_UARTA));
-    tegra_uartd_dev = serial_mm_init(sysmem, TEGRA_UARTD_BASE, 2,
-                                     DIRQ(INT_UARTD), 115200,
+    /* UART controllers */
+    tegra_uarta_dev = serial_mm_init(sysmem, TEGRA_UARTA_BASE, 2,
+                                     DIRQ(INT_UARTA), 115200,
                                      serial_hd(0),
                                      DEVICE_LITTLE_ENDIAN);
+    tegra_uarta_vendor_dev = sysbus_create_simple("tegra.uart", TEGRA_UARTA_BASE+0x20, NULL);
+
+    tegra_uartb_dev = serial_mm_init(sysmem, TEGRA_UARTB_BASE, 2,
+                                     DIRQ(INT_UARTB), 115200,
+                                     serial_hd(1),
+                                     DEVICE_LITTLE_ENDIAN);
+    tegra_uartb_vendor_dev = sysbus_create_simple("tegra.uart", TEGRA_UARTB_BASE+0x20, NULL);
+
+    tegra_uartc_dev = serial_mm_init(sysmem, TEGRA_UARTC_BASE, 2,
+                                     DIRQ(INT_UARTC), 115200,
+                                     serial_hd(2),
+                                     DEVICE_LITTLE_ENDIAN);
+    tegra_uartc_vendor_dev = sysbus_create_simple("tegra.uart", TEGRA_UARTC_BASE+0x20, NULL);
+
+    tegra_uartd_dev = serial_mm_init(sysmem, TEGRA_UARTD_BASE, 2,
+                                     DIRQ(INT_UARTD), 115200,
+                                     serial_hd(3),
+                                     DEVICE_LITTLE_ENDIAN);
+    tegra_uartd_vendor_dev = sysbus_create_simple("tegra.uart", TEGRA_UARTD_BASE+0x20, NULL);
 
     /* USB2 controllers */
     tegra_ehci1_dev = sysbus_create_simple("tegra.usb",
