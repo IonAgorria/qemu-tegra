@@ -52,6 +52,7 @@
 #include "apb/pmc/pmc.h"
 #include "ppsb/evp/evp.h"
 #include "apb/fuse/fuse.h"
+#include "hw/cpu/cluster.h"
 
 #include "bundle/boot_iram.bin.h"
 #include "bundle/u_boot_dtb_tegra.bin.h"
@@ -172,24 +173,35 @@ static void tegra2_create_cpus(void)
 {
     int i;
 
+    Object *cluster = object_new(TYPE_CPU_CLUSTER);
+    qdev_prop_set_uint32(DEVICE(cluster), "cluster-id", 0);
+    
     for (i = 0; i < TEGRA2_CCPLEX_NCORES; i++) {
         Object *cpuobj = object_new(ARM_CPU_TYPE_NAME("cortex-a9"));
+
+        object_property_add_child(cluster, "cpu[*]", cpuobj);
 
         object_property_set_int(cpuobj, "reset-cbar", TEGRA_ARM_PERIF_BASE, &error_abort);
         object_property_set_bool(cpuobj, "has_el3", false, &error_abort);
         object_property_set_bool(cpuobj, "reset-hivecs", true, &error_abort);
         object_property_set_bool(cpuobj, "start-powered-off", true, &error_abort);
         qdev_realize(DEVICE(cpuobj), NULL, &error_fatal);
+        add_tegra_cpu(TEGRA_CCPLEX_CORE0 + i, CPU(cpuobj)->cpu_index);
     }
 
-    /* AVP(COP) Audio Video Processor */
+    qdev_realize(DEVICE(cluster), NULL, &error_fatal);
+
+    /* BPMP also known as AVP Audio Video Processor or COP(processor) */
+    cluster = object_new(TYPE_CPU_CLUSTER);
+    qdev_prop_set_uint32(DEVICE(cluster), "cluster-id", 1);
+
     Object *cpuobj = object_new(ARM_CPU_TYPE_NAME("arm7tdmi"));
+    object_property_add_child(cluster, "cpu[*]", cpuobj);
     object_property_set_bool(cpuobj, "start-powered-off", true, &error_abort);
     qdev_realize(DEVICE(cpuobj), NULL, &error_fatal);
+    add_tegra_cpu(TEGRA_BPMP, CPU(cpuobj)->cpu_index);
 
-    set_is_tegra_cpu(TEGRA_CCPLEX_CORE0);
-    set_is_tegra_cpu(TEGRA_CCPLEX_CORE1);
-    set_is_tegra_cpu(TEGRA_BPMP);
+    qdev_realize(DEVICE(cluster), NULL, &error_fatal);
 }
 
 static struct arm_boot_info tegra_board_binfo = {
@@ -319,8 +331,8 @@ static void tegra2_init(MachineState *machine)
     qdev_prop_set_uint32(DEVICE(tegra_irq_dispatcher_dev), "num-cpu", TEGRA2_CCPLEX_NCORES);
     sysbus_realize_and_unref(irq_dispatcher, &error_fatal);
 
-    for (i = 0, j = 0; i < TEGRA2_CCPLEX_NCORES+1; i++) {
-        cpudev = DEVICE(qemu_get_cpu(i));
+    for (i = 0, j = 0; i < TEGRA2_NCPUS; i++) {
+        cpudev = DEVICE(tegra_get_cpu(tegra_get_cpu_id(i)));
         sysbus_connect_irq(irq_dispatcher, j++,
                                         qdev_get_gpio_in(cpudev, ARM_CPU_IRQ));
         sysbus_connect_irq(irq_dispatcher, j++,
@@ -629,7 +641,7 @@ static void tegra2_init(MachineState *machine)
 //                                 0x2F600000,
 //                                 0x2F600000, 0x10000000);
 
-    cs = qemu_get_cpu(TEGRA_BPMP);
+    cs = tegra_get_cpu(TEGRA_BPMP);
     cs->as = cop_as;
 
     /* Override default AS.  */
@@ -658,6 +670,11 @@ static void tegra2_reset(MachineState *state, ShutdownCause cause)
 {
 //     remote_io_init("10.1.1.3:45312");
     tegra_trace_init();
+
+    for (int i = 0; i < TEGRA2_NCPUS; i++) {
+        tegra_cpu_reset_assert(tegra_get_cpu_id(i));
+    }
+    
     qemu_devices_reset(cause);
 
     tegra_pmc_reset(tegra_pmc_dev, cause);

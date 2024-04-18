@@ -80,7 +80,7 @@ static void tegra_cpu_pwrgate_reset(void *opaque)
 static void tegra_do_cpu_reset(void *opaque)
 {
     CPUState *cs = opaque;
-    int cpu_id = cs->cpu_index;
+    int cpu_id = tegra_get_cpu_id(cs->cpu_index);
 
     assert(cpu_id < TEGRA_NCPUS);
 
@@ -104,7 +104,7 @@ int tegra_cpu_reset_asserted(int cpu_id)
 
 void tegra_cpu_reset_assert(int cpu_id)
 {
-    CPUState *cs = qemu_get_cpu(cpu_id);
+    CPUState *cs = tegra_get_cpu(cpu_id);
     ARMCPU *cpu = ARM_CPU(cs);
 
     TPRINT("%s cpu %d tcpu_in_reset: %d\n",
@@ -113,7 +113,7 @@ void tegra_cpu_reset_assert(int cpu_id)
     if (!tcpu_in_reset[cpu_id]) {
         tcpu_in_reset[cpu_id] = 1;
 
-        arm_set_cpu_off(cpu_id);
+        arm_set_cpu_off(cs->cpu_index);
 
         /* Force poweron work queuing.  */
         cpu->power_state = PSCI_OFF;
@@ -122,7 +122,7 @@ void tegra_cpu_reset_assert(int cpu_id)
 
 void tegra_cpu_reset_deassert(int cpu_id, int flow)
 {
-    CPUState *cs = qemu_get_cpu(cpu_id);
+    CPUState *cs = tegra_get_cpu(cpu_id);
     ARMCPU *cpu = ARM_CPU(cs);
 
     TPRINT("%s cpu %d tcpu_in_reset: %d flow: %d powergated: %d halted: %d\n",
@@ -147,13 +147,13 @@ void tegra_cpu_reset_deassert(int cpu_id, int flow)
                 object_property_set_int(obj, "rvbar", value, &error_abort);
             }
 
-            arm_set_cpu_on_and_reset(cpu_id);
+            arm_set_cpu_on_and_reset(cs->cpu_index);
         }
         else {
             if (cpu_id == TEGRA_BPMP)
-                arm_set_cpu_on(cpu_id, 0x0, 0, 1, 0);
+                arm_set_cpu_on(cs->cpu_index, 0x0, 0, 1, 0);
             else
-                arm_set_cpu_on(cpu_id, 0xf0010000, 0, 3, 1);
+                arm_set_cpu_on(cs->cpu_index, 0xf0010000, 0, 3, 1);
         }
 
         /* Force poweroff work queuing.  */
@@ -230,7 +230,7 @@ static void tegra_cpu_unpowergateAVP(void)
 
 static void tegra_cpu_powergate_sanity_check(int cpu_id)
 {
-    CPUState *cs = qemu_get_cpu(cpu_id);
+    CPUState *cs = tegra_get_cpu(cpu_id);
     ARMCPU *cpu = ARM_CPU(cs);
 
     /* Core should be stopped before CPU powergate.  */

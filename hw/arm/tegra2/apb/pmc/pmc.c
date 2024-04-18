@@ -707,6 +707,7 @@ static void tegra_pmc_priv_write(void *opaque, hwaddr offset,
             if (tegra_board >= TEGRAX1_BOARD) {
                 if (s->pwrgate_toggle.partid >= 9 && s->pwrgate_toggle.partid <= 14) {
                     int cpu_id = s->pwrgate_toggle.partid < 14 ? s->pwrgate_toggle.partid - 8 : 0;
+                    cpu_id = tegra_get_cpu_id(cpu_id);
                     if (cpu_id < TEGRAX1_CCPLEX_NCORES) {
                         if (tegra_cpu_is_powergated(cpu_id))
                             tegra_cpu_unpowergate(cpu_id);
@@ -1170,8 +1171,8 @@ void tegra_pmc_update_crail(void)
 
     if (tegra_board >= TEGRAX1_BOARD) {
         bool crail = 0, flag = 0;
-        for (int cpu_id=0; cpu_id < TEGRAX1_CCPLEX_NCORES; cpu_id++) {
-            flag = (tegra_cpu_is_powergated(cpu_id)==0);
+        for (int i=0; i < TEGRAX1_CCPLEX_NCORES; i++) {
+            flag = (tegra_cpu_is_powergated(TEGRA_CCPLEX_CORE0 + i)==0);
             crail |= flag;
         }
         s->pwrgate_status.cpu = crail; // CRAIL: CPU Rail

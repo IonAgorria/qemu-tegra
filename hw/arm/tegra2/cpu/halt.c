@@ -43,7 +43,7 @@ void tegra_cpu_hlt_clr(void)
 
 static void tegra_cpu_stop(int cpu_id)
 {
-    CPUState *cs = qemu_get_cpu(cpu_id);
+    CPUState *cs = tegra_get_cpu(cpu_id);
 
     if (tcpu_halted[cpu_id])
         return;
@@ -58,7 +58,7 @@ static void tegra_cpu_stop(int cpu_id)
 
 void tegra_cpu_run(int cpu_id)
 {
-    CPUState *cs = qemu_get_cpu(cpu_id);
+    CPUState *cs = tegra_get_cpu(cpu_id);
 
     if (tcpu_halted[cpu_id]) {
         TPRINT("%s cpu %d HALTED!\n", __func__, cpu_id);

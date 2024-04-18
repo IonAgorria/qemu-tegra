@@ -51,6 +51,9 @@ void tegra_flow_wfe_handle(int cpu_id, int type);
 void tegra_cpu_reset_init(void);
 int tegra_sibling_cpu(int cpu_id);
 int tegra_cpu_halted(int cpu_id);
-void set_is_tegra_cpu(int cpu_id);
+void add_tegra_cpu(int cpu_id, int cpu_index);
+int tegra_get_cpu_index(int cpu_id);
+int tegra_get_cpu_id(int cpu_index);
+CPUState* tegra_get_cpu(int cpu_id);
 
 #endif // TEGRA_CPU_H

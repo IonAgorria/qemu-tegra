@@ -73,18 +73,22 @@ int tegra_ictlr_is_irq_pending_on_cpu(int cpu_id)
 {
     tegra_ictlr *s = tegra_ictlr_dev;
     int ret = 0;
+    int cpu_idx;
 
     g_assert(tegra_ictlr_dev != NULL);
-    g_assert(cpu_id < s->num_cpu);
 
     switch (cpu_id) {
     case TEGRA_CCPLEX_CORE0:
     case TEGRA_CCPLEX_CORE1:
     case TEGRA_CCPLEX_CORE2:
-    case TEGRA_CCPLEX_CORE3:
-        ret |= tegra_ictlr_is_irq_pending(s, s->virq_cpu[cpu_id], 0);
-        ret |= tegra_ictlr_is_irq_pending(s, s->vfiq_cpu[cpu_id], 1);
+    case TEGRA_CCPLEX_CORE3: {
+        cpu_idx = tegra_get_cpu_index(cpu_id);
+        g_assert(0 <= cpu_idx);
+        g_assert(cpu_idx < s->num_cpu);
+        ret |= tegra_ictlr_is_irq_pending(s, s->virq_cpu[cpu_idx], 0);
+        ret |= tegra_ictlr_is_irq_pending(s, s->vfiq_cpu[cpu_idx], 1);
         break;
+    }
     case TEGRA_BPMP:
         ret |= tegra_ictlr_is_irq_pending(s, s->virq_cop, 0);
         ret |= tegra_ictlr_is_irq_pending(s, s->vfiq_cop, 1);
@@ -169,8 +173,9 @@ static void tegra_ictlr_irq_handler(void *opaque, int irq, int level)
     uint32_t irq_mask = 1 << (irq & 0x1F);
     int bank = irq >> 5;
 
-//     TPRINT("%s: irq %d level %d\n", __func__, irq, level);
+     TPRINT("%s: irq %d level %d\n", __func__, irq, level);
 
+    g_assert(bank < s->num_banks);
     g_assert(irq < s->num_irq);
 
     if (level)
