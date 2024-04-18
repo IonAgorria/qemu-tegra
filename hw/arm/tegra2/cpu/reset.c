@@ -38,7 +38,7 @@
 static int tegra_A9_powergated;
 static int tegra_AVP_powergated;
 
-static int tcpu_in_reset[TEGRA2_NCPUS];
+static int tcpu_in_reset[TEGRA_NCPUS];
 
 static void tegra_dump_cpus_pc(void)
 {
@@ -78,7 +78,7 @@ static void tegra_do_cpu_reset(void *opaque)
     CPUState *cs = opaque;
     int cpu_id = cs->cpu_index;
 
-    assert(cpu_id < TEGRA2_NCPUS);
+    assert(cpu_id < TEGRA_NCPUS);
 
     tcpu_in_reset[cpu_id] = 1;
 }
@@ -100,7 +100,7 @@ int tegra_cpu_reset_asserted(int cpu_id)
 
 void tegra_cpu_reset_assert(int cpu_id)
 {
-    CPUState *cs = qemu_get_cpu(cpu_id);
+    CPUState *cs = tegra_get_cpu(cpu_id);
     ARMCPU *cpu = ARM_CPU(cs);
 
     TPRINT("%s cpu %d tcpu_in_reset: %d\n",
@@ -118,7 +118,7 @@ void tegra_cpu_reset_assert(int cpu_id)
 
 void tegra_cpu_reset_deassert(int cpu_id, int flow)
 {
-    CPUState *cs = qemu_get_cpu(cpu_id);
+    CPUState *cs = tegra_get_cpu(cpu_id);
     ARMCPU *cpu = ARM_CPU(cs);
 
     TPRINT("%s cpu %d tcpu_in_reset: %d flow: %d powergated: %d halted: %d\n",
@@ -149,7 +149,7 @@ int tegra_cpu_is_powergated(int cpu_id)
     case TEGRA2_A9_CORE0:
     case TEGRA2_A9_CORE1:
         return tegra_A9_powergated;
-    case TEGRA2_COP:
+    case TEGRA_BPMP:
         return tegra_AVP_powergated;
     default:
         g_assert_not_reached();
@@ -188,7 +188,7 @@ static void tegra_cpu_powergateAVP(void)
 
     assert(!tegra_AVP_powergated);
 
-    tegra_cpu_reset_assert(TEGRA2_COP);
+    tegra_cpu_reset_assert(TEGRA_BPMP);
     tegra_AVP_powergated = 1;
 }
 
@@ -198,13 +198,13 @@ static void tegra_cpu_unpowergateAVP(void)
 
     assert(tegra_AVP_powergated);
 
-    tegra_cpu_reset_deassert(TEGRA2_COP, 1);
+    tegra_cpu_reset_deassert(TEGRA_BPMP, 1);
     tegra_AVP_powergated = 0;
 }
 
 static void tegra_cpu_powergate_sanity_check(void)
 {
-    CPUState *cs = qemu_get_cpu(TEGRA2_A9_CORE1);
+    CPUState *cs = tegra_get_cpu(TEGRA2_A9_CORE1);
     ARMCPU *cpu = ARM_CPU(cs);
 
     /* Core 1 should be stopped before CPU powergate.  */
@@ -219,7 +219,7 @@ void tegra_cpu_powergate(int cpu_id)
         tegra_cpu_powergate_sanity_check();
         tegra_cpu_powergateA9();
         break;
-    case TEGRA2_COP:
+    case TEGRA_BPMP:
         tegra_cpu_powergateAVP();
         break;
     default:
@@ -234,7 +234,7 @@ void tegra_cpu_unpowergate(int cpu_id)
     case TEGRA2_A9_CORE1:
         tegra_cpu_unpowergateA9();
         break;
-    case TEGRA2_COP:
+    case TEGRA_BPMP:
         tegra_cpu_unpowergateAVP();
         break;
     default:

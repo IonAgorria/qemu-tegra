@@ -31,19 +31,19 @@
 #undef TPRINT
 #define TPRINT(...) {}
 
-static int tcpu_halted[TEGRA2_NCPUS];
+static int tcpu_halted[TEGRA_NCPUS];
 
 void tegra_cpu_hlt_clr(void)
 {
     int i;
 
-    for (i = 0; i < TEGRA2_NCPUS; i++)
+    for (i = 0; i < TEGRA_NCPUS; i++)
         tcpu_halted[i] = 0;
 }
 
 static void tegra_cpu_stop(int cpu_id)
 {
-    CPUState *cs = qemu_get_cpu(cpu_id);
+    CPUState *cs = tegra_get_cpu(cpu_id);
 
     if (tcpu_halted[cpu_id])
         return;
@@ -58,7 +58,7 @@ static void tegra_cpu_stop(int cpu_id)
 
 void tegra_cpu_run(int cpu_id)
 {
-    CPUState *cs = qemu_get_cpu(cpu_id);
+    CPUState *cs = tegra_get_cpu(cpu_id);
 
     if (tcpu_halted[cpu_id]) {
         TPRINT("%s cpu %d HALTED!\n", __func__, cpu_id);

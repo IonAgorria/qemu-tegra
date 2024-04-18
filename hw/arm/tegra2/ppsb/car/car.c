@@ -288,7 +288,7 @@ static void set_rst_devices_l(uint32_t value)
     rst_dev_l_set_t rst = { .reg32 = value };
 
     if (rst.set_cop_rst) {
-        tegra_cpu_reset_assert(TEGRA2_COP);
+        tegra_cpu_reset_assert(TEGRA_BPMP);
     }
 
     if (rst.set_trig_sys_rst) {
@@ -320,7 +320,7 @@ static void clr_rst_devices_l(uint32_t value)
     rst_dev_l_clr_t rst = { .reg32 = value };
 
     if (rst.clr_cop_rst) {
-        tegra_cpu_reset_deassert(TEGRA2_COP, 0);
+        tegra_cpu_reset_deassert(TEGRA_BPMP, 0);
     }
 
     if (rst.clr_vcp_rst) {

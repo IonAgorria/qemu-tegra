@@ -104,7 +104,7 @@ static void tegra_irq_dispatcher_set_cop_irq_lic(void *opaque, int irq, int leve
     qemu_set_irq(s->cop_irqs[irq_type], level);
 
     if (level) {
-        tegra_flow_on_irq(TEGRA2_COP);
+        tegra_flow_on_irq(TEGRA_BPMP);
     }
 }
 

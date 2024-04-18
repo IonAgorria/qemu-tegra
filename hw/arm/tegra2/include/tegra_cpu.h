@@ -22,9 +22,9 @@
 enum {
     TEGRA2_A9_CORE0 = 0,
     TEGRA2_A9_CORE1,
-    TEGRA2_COP,
-    TEGRA2_A9_NCORES = TEGRA2_COP,
-    TEGRA2_NCPUS
+    TEGRA_BPMP,
+    TEGRA2_A9_NCORES = 2,
+    TEGRA_NCPUS = 3,
 };
 
 void tegra_cpu_halt(int cpu_id);
@@ -39,4 +39,6 @@ void tegra_flow_wfe_handle(int cpu_id);
 void tegra_cpu_reset_init(void);
 int tegra_sibling_cpu(int cpu_id);
 int tegra_cpu_halted(int cpu_id);
-void set_is_tegra_cpu(int cpu_id);
+void add_tegra_cpu(int cpu_id, int cpu_index);
+int get_tegra_cpu_id(int cpu_index);
+CPUState* tegra_get_cpu(int cpu_id);
