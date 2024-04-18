@@ -248,6 +248,32 @@ static void load_memory_images(MachineState *machine)
     }
 }
 
+static void tegra_init_sdmmc(int index, hwaddr base, qemu_irq irq, bool emmc, uint32_t bootpartsize)
+{
+    DeviceState *carddev;
+    BlockBackend *blk;
+    DriveInfo *di;
+
+    void* tmpdev = qdev_new(TYPE_SYSBUS_SDHCI);
+    qdev_prop_set_uint32(tmpdev, "capareg", 0x5780A8A);
+    //qdev_prop_set_uint32(tmpdev, "capareg", 0x376c0c8c); // Value from hardware is 0x376cd08c. Workaround qemu BASECLKFREQ validation.
+    sysbus_realize_and_unref(SYS_BUS_DEVICE(tmpdev), &error_fatal);
+
+    sysbus_mmio_map(SYS_BUS_DEVICE(tmpdev), 0, base);
+    sysbus_connect_irq(SYS_BUS_DEVICE(tmpdev), 0, irq);
+    //tegra_sdmmc_vendor_devs[index] = sysbus_create_simple("tegra.sdmmcvendor", base+0x100, NULL);
+
+    di = drive_get_by_index(IF_SD, index);
+    blk = di ? blk_by_legacy_dinfo(di) : NULL;
+    carddev = qdev_new(TYPE_SD_CARD);
+    qdev_prop_set_drive(carddev, "drive", blk);
+    qdev_prop_set_bit(carddev, "emmc", emmc);
+    //if (emmc) qdev_prop_set_uint32(carddev, "bootpartsize", bootpartsize);
+    qdev_realize_and_unref(carddev, qdev_get_child_bus(tmpdev, "sd-bus"), &error_fatal);
+
+    tegra_sdmmc_devs[index] = tmpdev;
+}
+
 static void tegra2_init(MachineState *machine)
 {
     MemoryRegion *cop_sysmem = g_new(MemoryRegion, 1);
@@ -386,29 +412,11 @@ static void tegra2_init(MachineState *machine)
     tegra_rtc_dev = sysbus_create_simple("tegra.rtc",
                                          TEGRA_RTC_BASE, DIRQ(INT_RTC));
 
-    /* SDHCI4 */
-    {
-        DeviceState *carddev;
-        BlockBackend *blk;
-        DriveInfo *di;
-
-        tegra_sdhci4_dev = qdev_new(TYPE_SYSBUS_SDHCI);
-        qdev_prop_set_uint32(tegra_sdhci4_dev, "capareg", 0x5780A8A);
-        sysbus_realize_and_unref(SYS_BUS_DEVICE(tegra_sdhci4_dev), &error_fatal);
-
-        sysbus_mmio_map(SYS_BUS_DEVICE(tegra_sdhci4_dev), 0, TEGRA_SDMMC4_BASE);
-        sysbus_connect_irq(SYS_BUS_DEVICE(tegra_sdhci4_dev), 0, DIRQ(INT_SDMMC4));
-
-        di = drive_get(IF_SD, 0, 0);
-        blk = di ? blk_by_legacy_dinfo(di) : NULL;
-        carddev = qdev_new(TYPE_SD_CARD);
-        qdev_prop_set_drive(carddev, "drive", blk);
-        qdev_prop_set_bit(carddev, "emmc", false);
-        qdev_realize_and_unref(carddev, qdev_get_child_bus(tegra_sdhci4_dev, "sd-bus"), &error_fatal);
-
-//         tegra_sdhci4_dev = sysbus_create_simple("tegra.sdhci",
-//                                                 TEGRA_SDMMC4_BASE, DIRQ(INT_SDMMC4));
-    }
+    /* SDMMC */
+    tegra_init_sdmmc(0, TEGRA_SDMMC1_BASE, DIRQ(INT_SDMMC1), false, 0);
+    tegra_init_sdmmc(1, TEGRA_SDMMC2_BASE, DIRQ(INT_SDMMC2), false, 0);
+    tegra_init_sdmmc(2, TEGRA_SDMMC3_BASE, DIRQ(INT_SDMMC3), false, 0);
+    tegra_init_sdmmc(3, TEGRA_SDMMC4_BASE, DIRQ(INT_SDMMC4), true, 0x400000);
 
     /* Timer1 */
     tegra_timer1_dev = sysbus_create_simple("tegra.timer",
