@@ -20,7 +20,9 @@
 // Based on tegra2 device code by digetx.
 // This uses various definitions from: https://github.com/Atmosphere-NX/Atmosphere/blob/master/libraries/libexosphere/source/se/se_registers.hpp
 
+#ifdef CONFIG_GCRYPT
 #include <gcrypt.h>
+#endif
 
 #include "tegra_common.h"
 
@@ -200,7 +202,9 @@ static void se_log_hexdump(const char *prefix,
 
 typedef struct QCryptoGcryptRSA {
     QCryptoAkCipher akcipher;
+#ifdef CONFIG_GCRYPT
     gcry_sexp_t key;
+#endif
     QCryptoRSAPaddingAlgorithm padding_alg;
     QCryptoHashAlgorithm hash_alg;
 } QCryptoGcryptRSA;
@@ -223,11 +227,13 @@ static void qcrypto_gcrypt_rsa_free(QCryptoAkCipher *akcipher)
     if (!rsa) {
         return;
     }
-
+#ifdef CONFIG_GCRYPT
     gcry_sexp_release(rsa->key);
+#endif
     g_free(rsa);
 }
 
+#ifdef CONFIG_GCRYPT
 static void qcrypto_gcrypt_set_rsa_size(QCryptoAkCipher *akcipher, gcry_mpi_t n)
 {
     size_t key_size = (gcry_mpi_get_nbits(n) + 7) / 8;
@@ -282,6 +288,7 @@ cleanup:
 }
 
 extern QCryptoAkCipherDriver gcrypt_rsa;
+#endif
 
 static QCryptoGcryptRSA *qcrypto_gcrypt_rsa_new(
     const QCryptoAkCipherOptionsRSA *opt,
@@ -293,7 +300,9 @@ static QCryptoGcryptRSA *qcrypto_gcrypt_rsa_new(
     QCryptoGcryptRSA *rsa = g_new0(QCryptoGcryptRSA, 1);
     rsa->padding_alg = opt->padding_alg;
     rsa->hash_alg = opt->hash_alg;
+#ifdef CONFIG_GCRYPT
     rsa->akcipher.driver = &gcrypt_rsa;
+#endif
 
     switch (type) {
     /*case QCRYPTO_AKCIPHER_KEY_TYPE_PRIVATE:
@@ -303,10 +312,14 @@ static QCryptoGcryptRSA *qcrypto_gcrypt_rsa_new(
         break;*/
 
     case QCRYPTO_AKCIPHER_KEY_TYPE_PUBLIC:
+#ifdef CONFIG_CRYPTO
         if (qcrypto_gcrypt_parse_rsa_public_key_raw(rsa, n, n_size, e, e_size, errp) != 0) {
             goto error;
         }
         break;
+#else
+        goto error;
+#endif
 
     default:
         error_setg(errp, "Unknown akcipher key type %d", type);
@@ -1385,13 +1398,14 @@ static void tegra_se_priv_write(void *opaque, hwaddr offset,
             }
         break;
 
-        case SE_CRYPTO_KEYTABLE_DATA_OFFSET:
+        case SE_CRYPTO_KEYTABLE_DATA_OFFSET: {
             uint32_t aes_tableoffset = s->regs.SE_CRYPTO_KEYTABLE_ADDR & 0xff;
             uint32_t keyslot = aes_tableoffset>>4;
             if (tegra_se_check_aes_keyslot_write(s, aes_tableoffset)) // *Write
                 s->aes_keytable[aes_tableoffset] = value;
             else
                 qemu_log_mask(LOG_GUEST_ERROR, "tegra.se: Ignoring attempt to write AES keytable for keyslot %"PRIu32" since *Write is locked.\n", keyslot);
+        }
         break;
 
         case SE_RSA_KEYTABLE_ADDR_OFFSET:
@@ -1409,9 +1423,10 @@ static void tegra_se_priv_write(void *opaque, hwaddr offset,
             }
         break;
 
-        case SE_RSA_KEYTABLE_DATA_OFFSET:
+        case SE_RSA_KEYTABLE_DATA_OFFSET: {
             uint32_t rsa_tableoffset = s->regs.SE_RSA_KEYTABLE_ADDR & 0xff;
             s->rsa_keytable[rsa_tableoffset] = value;
+        }
         break;
 
         case SE_CRYPTO_SECURITY_PERKEY_OFFSET ... SE_CRYPTO_SECURITY_PERKEY_OFFSET+sizeof(s->regs.SE_CRYPTO_SECURITY_PERKEY)-1:
