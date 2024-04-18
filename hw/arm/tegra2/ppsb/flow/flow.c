@@ -125,11 +125,12 @@ static int tegra_flow_have_pending_irq(int cpu_id)
         return 0;
     }
 
+    int cm = 1 << tegra_get_cpu_index(cpu_id);
     for (i = INT_PRI_BASE; i < INT_GIC_NR; i++) {
-        if (!GIC_DIST_TEST_ENABLED(i, 1 << cpu_id))
+        if (!GIC_DIST_TEST_ENABLED(i, cm))
             continue;
 
-        if (gic_test_pending(s, i, 1 << cpu_id)) {
+        if (gic_test_pending(s, i, cm)) {
             TPRINT("tegra_flow: irq %d pending\n", i);
             return 1;
         }
@@ -352,7 +353,7 @@ static uint64_t tegra_flow_priv_read(void *opaque, hwaddr offset,
 
     TRACE_READ(s->iomem.addr, offset, ret);
 
-    if (current_cpu && current_cpu->cpu_index == TEGRA_BPMP) {
+    if (current_cpu && tegra_get_cpu_id(current_cpu->cpu_index) == TEGRA_BPMP) {
         if (s->halt_events[TEGRA_BPMP].mode & INTERRUPT) {
             s->halt_events[TEGRA_BPMP].mode |= WAITEVENT;
             s->cop_stalled = 1;
@@ -388,7 +389,7 @@ void tegra_flow_on_irq(int cpu_id)
 //     TPRINT("%s cpu %d\n", __func__, cpu_id);
 
     CPU_FOREACH(csX) {
-        int cpu_idX = csX->cpu_index;
+        int cpu_idX = tegra_get_cpu_id(csX->cpu_index);
 
         if (!(s->csr[cpu_idX].wait_event)) {
             continue;
@@ -426,8 +427,8 @@ event:
                 g_assert(s->halt_events[cpu_id].mode & STOP);
             }
             else {
-                for (uint32_t i=TEGRA_CCPLEX_CORE0; i<s->num_cpu; i++) {
-                    if (cpu_id!=i) {
+                for (int i=TEGRA_CCPLEX_CORE0; i<s->num_cpu; i++) {
+                    if (cpu_id!=tegra_get_cpu_id(i)) {
                         g_assert(s->halt_events[i].mode & STOP);
                     }
                 }
@@ -556,20 +557,20 @@ static void tegra_flow_update_mode(tegra_flow *s, int cpu_id, int in_wfe)
 //            tegra_flow_mode_name(s->halt_events[cpu_id].mode), in_wfe, cpu_id);
 
     if (cpu_id == TEGRA_ADSP) {
-        CPUState *cs = CPU(qemu_get_cpu(cpu_id));
+        CPUState *cs = tegra_get_cpu(cpu_id);
         cpu_loop_exit(cs);
         return;
     }
 
     if (in_wfe) {
-        CPUState *cs = CPU(qemu_get_cpu(cpu_id));
+        CPUState *cs = tegra_get_cpu(cpu_id);
 
         bql_lock();
 
         bool flag=false;
         if (!is_cop) {
             for (int i=TEGRA_CCPLEX_CORE0; i<s->num_cpu; i++) {
-                if (cpu_id!=i) {
+                if (cpu_id != tegra_get_cpu_id(i)) {
                     flag = tegra_flow_powergate(s, i, 1);
                     if (flag) break;
                 }
@@ -670,10 +671,11 @@ static void tegra_flow_csr_write(tegra_flow *s, hwaddr offset,
         case TEGRA_CCPLEX_CORE0:
         case TEGRA_CCPLEX_CORE1:
         case TEGRA_CCPLEX_CORE2:
-        case TEGRA_CCPLEX_CORE3:
-            bool flag=false;
-            for (int i=TEGRA_CCPLEX_CORE0; i<s->num_cpu; i++) {
-                if (cpu_id!=i && s->csr[ i ].intr_flag) {
+        case TEGRA_CCPLEX_CORE3: {
+            bool flag = false;
+            for (int i = 0; i < s->num_cpu; i++) {
+                int cpu_i = tegra_get_cpu_id(i);
+                if (cpu_id != cpu_i && s->csr[cpu_i].intr_flag) {
                     flag = true;
                     break;
                 }
@@ -681,6 +683,7 @@ static void tegra_flow_csr_write(tegra_flow *s, hwaddr offset,
             if (flag) break;
             TRACE_IRQ_LOWER(s->iomem.addr, s->irq_cpu_event);
             break;
+        }
         case TEGRA_BPMP:
             TRACE_IRQ_LOWER(s->iomem.addr, s->irq_cop_event);
             break;
@@ -823,18 +826,19 @@ static void tegra_flow_priv_realize(DeviceState *dev, Error **errp)
     sysbus_init_mmio(SYS_BUS_DEVICE(dev), &s->iomem);
 
     for (i = 0; i < TEGRA_NCPUS; i++) {
-        if (i >= s->num_cpu && i != TEGRA_BPMP) continue;
+        int cpu_id = tegra_get_cpu_id(i);
+        if (i >= s->num_cpu && cpu_id != TEGRA_BPMP) continue;
 
         tegra_flow_timer_arg *arg = g_malloc0(sizeof(tegra_flow_timer_arg));
 
         arg->s = s;
-        arg->cpu_id = i;
+        arg->cpu_id = cpu_id;
 
-        s->ptimer[i] = ptimer_init(tegra_flow_timer_event, arg,
+        s->ptimer[cpu_id] = ptimer_init(tegra_flow_timer_event, arg,
                                    PTIMER_POLICY_CONTINUOUS_TRIGGER);
-        ptimer_transaction_begin(s->ptimer[i]);
-        ptimer_set_freq(s->ptimer[i], 1000000);
-        ptimer_transaction_commit(s->ptimer[i]);
+        ptimer_transaction_begin(s->ptimer[cpu_id]);
+        ptimer_set_freq(s->ptimer[cpu_id], 1000000);
+        ptimer_transaction_commit(s->ptimer[cpu_id]);
     }
 }
 

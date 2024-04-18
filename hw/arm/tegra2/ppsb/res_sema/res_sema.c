@@ -131,7 +131,7 @@ static void tegra_res_sema_priv_write(void *opaque, hwaddr offset,
         return;
     }
 
-    cpu_id = current_cpu->cpu_index;
+    cpu_id = tegra_get_cpu_id(current_cpu->cpu_index);
 
     switch (offset) {
     case RES_SEMA_SHRD_SMP_STA_OFFSET:

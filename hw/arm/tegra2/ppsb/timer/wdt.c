@@ -110,8 +110,9 @@ void tegra_wdt_alarm(void *opaque)
                 }
             }
             else if (s->expiration_count==3) { // Directed reset
-                for (int cpu_id=0; cpu_id<5; cpu_id++) {
-                    if (s->config.core_reset_bitmap_en & (1<<cpu_id)) {
+                for (int cpu_i=0; cpu_i < 5; cpu_i++) {
+                    if (s->config.core_reset_bitmap_en & (1 << cpu_i)) {
+                        int cpu_id = tegra_get_cpu_id(cpu_i);
                         qemu_log_mask(LOG_GUEST_ERROR, "tegra.wdt: Asserting reset for cpu %d.\n", cpu_id);
                         tegra_cpu_reset_assert(cpu_id);
                     }
@@ -137,8 +138,9 @@ void tegra_wdt_alarm(void *opaque)
                     if (err) error_report_err(err);
                 }
                 else {
-                    for (int cpu_id=0; cpu_id<5; cpu_id++) {
-                        if (s->config.core_reset_bitmap_en & (1<<cpu_id)) {
+                    for (int cpu_i=0; cpu_i<5; cpu_i++) {
+                        if (s->config.core_reset_bitmap_en & (1<<cpu_i)) {
+                            int cpu_id = tegra_get_cpu_id(cpu_i);
                             qemu_log_mask(LOG_GUEST_ERROR, "tegra.wdt: Deasserting reset for cpu %d.\n", cpu_id);
                             tegra_cpu_reset_deassert(cpu_id, 0);
                         }

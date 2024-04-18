@@ -58,9 +58,10 @@ static void tegra_irq_dispatcher_set_irq_dev(void *opaque, int irq, int level)
 static void tegra_irq_dispatcher_set_irq_gic(void *opaque, int irq, int level)
 {
     tegra_irq_dispatcher *s = TEGRA_IRQ_DISPATCHER(opaque);
-    int cpu_id = irq - INT_MAIN_NR;
+    int cpu_index = irq - INT_MAIN_NR;
+    int cpu_id = tegra_get_cpu_id(cpu_index);
 
-    assert(cpu_id < s->num_cpu);
+    assert(0 <= cpu_id && cpu_index < s->num_cpu);
 
     if (cpu_id == TEGRA_CCPLEX_CORE0) {
         s->cpu_irq_gic_lvl = level;
@@ -141,8 +142,9 @@ static void tegra_irq_dispatcher_init(Object *obj)
     assert(s->num_cpu <= TEGRA_CCPLEX_NCORES);
 
     for (i = 0; i < s->num_cpu; i++) {
-        sysbus_init_irq(SYS_BUS_DEVICE(obj), &s->cpu_irqs[i][ARM_CPU_IRQ]);
-        sysbus_init_irq(SYS_BUS_DEVICE(obj), &s->cpu_irqs[i][ARM_CPU_FIQ]);
+        int cpu_id = tegra_get_cpu_id(i);
+        sysbus_init_irq(SYS_BUS_DEVICE(obj), &s->cpu_irqs[cpu_id][ARM_CPU_IRQ]);
+        sysbus_init_irq(SYS_BUS_DEVICE(obj), &s->cpu_irqs[cpu_id][ARM_CPU_FIQ]);
     }
 
     sysbus_init_irq(SYS_BUS_DEVICE(obj), &s->cop_irqs[ARM_CPU_IRQ]);

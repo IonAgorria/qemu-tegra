@@ -164,6 +164,7 @@ static void tegrax1_create_cpus(MemoryRegion *cop_sysmem, MemoryRegion *ape_sysm
 
     for (i = 0; i < TEGRAX1_CCPLEX_NCORES; i++) {
         Object *cpuobj = object_new(ARM_CPU_TYPE_NAME("cortex-a57"));
+        CPUState *cs = CPU(cpuobj);
 
         object_property_add_child(cluster, "cpu[*]", cpuobj);
 
@@ -173,9 +174,10 @@ static void tegrax1_create_cpus(MemoryRegion *cop_sysmem, MemoryRegion *ape_sysm
         object_property_set_bool(cpuobj, "start-powered-off", true, &error_abort);
         object_property_set_uint(cpuobj, "cntfrq", SYSTEM_TICK_FREQ, &error_abort); // This must be configured manually since qemu doesn't update the timer frequency when the cntfrq reg is written.
         qdev_realize(DEVICE(cpuobj), NULL, &error_fatal);
+        add_tegra_cpu(TEGRA_CCPLEX_CORE0 + i, cs->cpu_index);
 
         // TODO: How to properly set oslsr_el1, without changing the default reset value?(Below doesn't work correctly)
-        /*CPUState *cs = qemu_get_cpu(i);
+        /*
         ARMCPU *cpu = ARM_CPU(cs);
         CPUARMState *env = &cpu->env;
         printf("env->cp15.oslsr_el1: 0x%lx\n", env->cp15.oslsr_el1);
@@ -193,6 +195,7 @@ static void tegrax1_create_cpus(MemoryRegion *cop_sysmem, MemoryRegion *ape_sysm
     object_property_set_bool(cpuobj, "start-powered-off", true, &error_abort);
     object_property_set_link(cpuobj, "memory", OBJECT(cop_sysmem), &error_abort);
     qdev_realize(DEVICE(cpuobj), NULL, &error_fatal);
+    add_tegra_cpu(TEGRA_BPMP, CPU(cpuobj)->cpu_index);
 
     qdev_realize(DEVICE(cluster), NULL, &error_fatal);
 
@@ -208,15 +211,9 @@ static void tegrax1_create_cpus(MemoryRegion *cop_sysmem, MemoryRegion *ape_sysm
     object_property_set_bool(cpuobj, "start-powered-off", true, &error_abort);
     object_property_set_link(cpuobj, "memory", OBJECT(ape_sysmem), &error_abort);
     qdev_realize(DEVICE(cpuobj), NULL, &error_fatal);
+    add_tegra_cpu(TEGRA_ADSP, CPU(cpuobj)->cpu_index);
 
     qdev_realize(DEVICE(cluster), NULL, &error_fatal);
-
-    set_is_tegra_cpu(TEGRA_CCPLEX_CORE0);
-    set_is_tegra_cpu(TEGRA_CCPLEX_CORE1);
-    set_is_tegra_cpu(TEGRA_CCPLEX_CORE2);
-    set_is_tegra_cpu(TEGRA_CCPLEX_CORE3);
-    set_is_tegra_cpu(TEGRA_BPMP);
-    set_is_tegra_cpu(TEGRA_ADSP);
 }
 
 //static struct arm_boot_info tegra_board_binfo = {
@@ -429,7 +426,7 @@ static void __tegrax1_init(MachineState *machine)
      * and the GIC's IRQ/FIQ/VIRQ/VFIQ interrupt outputs to the CPU's inputs.
      */
     for (i = 0; i < TEGRAX1_CCPLEX_NCORES; i++) {
-        cpudev = DEVICE(qemu_get_cpu(i));
+        cpudev = DEVICE(tegra_get_cpu(TEGRA_CCPLEX_CORE0 + i));
         int intidbase = INT_MAIN_NR + i * GIC_INTERNAL;
         /* Mapping from the output timer irq lines from the CPU to the
          * GIC PPI inputs we use for the virt board.
@@ -479,7 +476,7 @@ static void __tegrax1_init(MachineState *machine)
     sysbus_realize_and_unref(irq_dispatcher, &error_fatal);
 
     for (i = 0, j = 0; i < TEGRAX1_MAIN_NCPUS; i++) {
-        cpudev = DEVICE(qemu_get_cpu(i));
+        cpudev = DEVICE(tegra_get_cpu(tegra_get_cpu_id(i)));
         sysbus_connect_irq(irq_dispatcher, j++,
                                         qdev_get_gpio_in(cpudev, ARM_CPU_IRQ));
         sysbus_connect_irq(irq_dispatcher, j++,
@@ -721,7 +718,7 @@ static void __tegrax1_init(MachineState *machine)
                                              TEGRA_WDT4_BASE, DIRQ(INT_WDT_AVP));
 
     for (i = 0; i < TEGRAX1_MAIN_NCPUS; i++) {
-        cpudev = DEVICE(qemu_get_cpu(i));
+        cpudev = DEVICE(tegra_get_cpu(tegra_get_cpu_id(i)));
         sysbus_connect_irq(tegra_wdt_devs[i], 1,
                            qdev_get_gpio_in(cpudev, ARM_CPU_FIQ));
     }
@@ -1260,7 +1257,7 @@ static void __tegrax1_init(MachineState *machine)
 //                                 0x2F600000,
 //                                 0x2F600000, 0x10000000);
 
-    //cs = qemu_get_cpu(TEGRA_BPMP);
+    //cs = tegra_get_cpu(TEGRA_BPMP);
     //cs->as = cop_as;
 
     /* Override default AS.  */
@@ -1312,8 +1309,7 @@ static void __tegrax1_init(MachineState *machine)
     memory_region_add_subregion(ape_sysmem, 0x00C00000, sysbus_mmio_get_region(s, 0));
 
     for (i = 0; i < 2; i++) {
-        int cpu_id = TEGRA_ADSP;
-        cpudev = DEVICE(qemu_get_cpu(cpu_id));
+        cpudev = DEVICE(tegra_get_cpu(TEGRA_ADSP));
 
         if (i==0) {
             sysbus_connect_irq(gicbusdev_ape, i, DIRQ(INT_APE_1));
@@ -1360,7 +1356,7 @@ static void __tegrax1_init(MachineState *machine)
     /*s = SYS_BUS_DEVICE(&a9mpcore->wdt);
     sysbus_connect_irq(s, 6 + TEGRA_ADSP, qdev_get_gpio_in(DEVICE(gicbusdev_ape), 79-32));*/
 
-    //cs = qemu_get_cpu(TEGRA_ADSP);
+    //cs = tegra_get_cpu(TEGRA_ADSP);
     //cs->as = ape_as;
 
     /* Override default AS.  */
