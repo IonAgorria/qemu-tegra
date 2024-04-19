@@ -1,6 +1,6 @@
 tegra2_inc = include_directories('include', 'ahb/host1x/include', '../../display')
 tegra2_dep = declare_dependency(include_directories : tegra2_inc)
-# tegra2_dep = declare_dependency(include_directories : tegra2_inc, compile_args: ['-DTEGRA_TRACE'])
+tegra2_dep = declare_dependency(include_directories : tegra2_inc, compile_args: ['-DTEGRA_TRACE'])
 
 arm_ss.add(files(
   'axi/emc/emc.c',

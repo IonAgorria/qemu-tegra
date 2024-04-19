@@ -295,8 +295,8 @@ static void* tegra_init_sdmmc(int index, hwaddr base, qemu_irq irq, bool emmc, u
     blk = di ? blk_by_legacy_dinfo(di) : NULL;
     carddev = qdev_new(TYPE_SD_CARD);
     qdev_prop_set_drive(carddev, "drive", blk);
-    qdev_prop_set_bit(carddev, "emmc", emmc);
-    if (emmc) qdev_prop_set_uint32(carddev, "bootpartsize", bootpartsize);
+    //qdev_prop_set_bit(carddev, "emmc", emmc);
+    //if (emmc) qdev_prop_set_uint32(carddev, "bootpartsize", bootpartsize);
     qdev_realize_and_unref(carddev, qdev_get_child_bus(tmpdev, "sd-bus"), &error_fatal);
     return tmpdev;
 }
@@ -513,10 +513,10 @@ static void tegra2_init(MachineState *machine)
     /* USB2 controllers */
     tegra_ehci1_dev = sysbus_create_simple("tegra.usb",
                                            TEGRA_USB_BASE, DIRQ(INT_USB));
-//     tegra_ehci2_dev = sysbus_create_simple("tegra.usb",
-//                                            TEGRA_USB2_BASE, DIRQ(INT_USB2));
-    tegra_ehci3_dev = sysbus_create_simple("tegra.usb",
-                                           TEGRA_USB3_BASE, DIRQ(INT_USB3));
+    tegra_ehci2_dev = sysbus_create_simple("tegra.usb",
+                                           TEGRA_USB2_BASE, DIRQ(INT_USB2));
+//    tegra_ehci3_dev = sysbus_create_simple("tegra.usb",
+//                                           TEGRA_USB3_BASE, DIRQ(INT_USB3));
 
     /* Unified Command Queue */
     tegra_ucq_dev = sysbus_create_simple("tegra.dummy256", 0x60010000, NULL);
