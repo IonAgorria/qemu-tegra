@@ -513,10 +513,10 @@ static void tegra2_init(MachineState *machine)
     /* USB2 controllers */
     tegra_ehci1_dev = sysbus_create_simple("tegra.usb",
                                            TEGRA_USB_BASE, DIRQ(INT_USB));
-//     tegra_ehci2_dev = sysbus_create_simple("tegra.usb",
-//                                            TEGRA_USB2_BASE, DIRQ(INT_USB2));
-    tegra_ehci3_dev = sysbus_create_simple("tegra.usb",
-                                           TEGRA_USB3_BASE, DIRQ(INT_USB3));
+    tegra_ehci2_dev = sysbus_create_simple("tegra.usb",
+                                           TEGRA_USB2_BASE, DIRQ(INT_USB2));
+//    tegra_ehci3_dev = sysbus_create_simple("tegra.usb",
+//                                           TEGRA_USB3_BASE, DIRQ(INT_USB3));
 
     /* Unified Command Queue */
     tegra_ucq_dev = sysbus_create_simple("tegra.dummy256", 0x60010000, NULL);
@@ -603,7 +603,8 @@ static void tegra2_init(MachineState *machine)
     sysbus_create_simple("tegra.pg", 0x60000000, NULL);
 
     /* PIO ethernet */
-    lan9118_init(0xA0000000, DIRQ(INT_SW_RESERVED));
+    if (false && nd_table[0].used)
+        lan9118_init(0xA0000000, DIRQ(INT_SW_RESERVED));
 
     /* Multi-CPU shared resources access arbitration */
     tegra_arb_sema_dev = sysbus_create_varargs("tegra.arb_sema",
