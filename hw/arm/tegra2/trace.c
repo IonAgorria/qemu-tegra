@@ -17,6 +17,7 @@
  *  with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#define USE_STDIO
 #define LOCAL_SOCKET
 
 #include "tegra_common.h"
@@ -154,10 +155,12 @@ int tegra_recv_all(int fd, void *_buf, int len1, bool single_read)
 __attribute__ ((format (printf, 1, 2))) void tegra_trace_text_message(const char* format, ...)
 {
 #ifdef _GNU_SOURCE
+#ifndef USE_STDIO
     struct trace_pkt_txt *W;
+    size_t sz;
+#endif
     va_list args;
     char *txt;
-    size_t sz;
     int ret;
 
     va_start(args, format);
@@ -167,6 +170,9 @@ __attribute__ ((format (printf, 1, 2))) void tegra_trace_text_message(const char
     if (ret < 1)
         return;
 
+#ifdef USE_STDIO
+    fprintf(stderr, "%s", txt);
+#else
     sz = sizeof(*W) + strlen(txt);
     W = malloc(sz);
     W->magic = htonl(PACKET_TRACE_TXT);
@@ -181,10 +187,14 @@ __attribute__ ((format (printf, 1, 2))) void tegra_trace_text_message(const char
 
     free(W);
 #endif
+#endif
 }
 
 void tegra_trace_irq(uint32_t hwaddr, uint32_t hwirq, uint32_t status)
 {
+#ifdef USE_STDIO
+    fprintf(stderr, "%s addr:0x%x irq:0x%x status:0x%x\n", __func__, hwaddr, hwirq, status);
+#else
     uint32_t time = qemu_clock_get_us(QEMU_CLOCK_VIRTUAL);
     struct trace_pkt_irq W = {
         htonl(PACKET_TRACE_IRQ),
@@ -197,11 +207,16 @@ void tegra_trace_irq(uint32_t hwaddr, uint32_t hwirq, uint32_t status)
     };
 
     tegra_send_all(msgsock, &W, sizeof(W));
+#endif
 }
 
 void tegra_trace_write(uint32_t hwaddr, uint32_t offset,
                        uint32_t value, uint32_t new_value, uint32_t is_write)
 {
+#ifdef USE_STDIO
+    fprintf(stderr, "%s addr:0x%x offset:0x%x value:0x%x new_value:0x%x is_write:0x%x\n",
+            __func__, hwaddr, offset, value, new_value, is_write);
+#else
     CPUState *cs = CPU(current_cpu);
     ARMCPU *cpu = ARM_CPU(cs);
     uint32_t cpu_pc = cpu ? cpu->env.regs[15] : 0;
@@ -220,10 +235,14 @@ void tegra_trace_write(uint32_t hwaddr, uint32_t offset,
     };
 
     tegra_send_all(msgsock, &W, sizeof(W));
+#endif
 }
 
 void tegra_trace_cdma(uint32_t data, uint32_t is_gather, uint32_t ch_id)
 {
+#ifdef USE_STDIO
+    fprintf(stderr, "%s data:0x%x is_gather:0x%x ch_id:0x%x\n", __func__, data, is_gather, ch_id);
+#else
     uint32_t time = qemu_clock_get_us(QEMU_CLOCK_VIRTUAL);
     struct trace_pkt_cdma W = {
         htonl(PACKET_TRACE_CDMA),
@@ -234,16 +253,23 @@ void tegra_trace_cdma(uint32_t data, uint32_t is_gather, uint32_t ch_id)
     };
 
     tegra_send_all(msgsock, &W, sizeof(W));
+#endif
 }
 
 #define CMD_CHANGE_TIMERS_FREQ      0x122
 
+#if !defined(TEGRA_TRACE) || defined(USE_STDIO)
+void tegra_trace_init(void) {
 #ifdef TEGRA_TRACE
+    printf("trace over stdio enabled...\n");
+#endif
+}
+#else
 static void * trace_viewer_cmd_handler(void *arg)
 {
     tegra_timer_us **timer_us = (void *) &tegra_timer_us_dev;
-    tegra_timer **timer3 = (void *) &tegra_timer3_dev;
-    tegra_timer **timer2 = (void *) &tegra_timer2_dev;
+    tegra_timer **timer3 = (void *) &tegra_timer_devs[2];
+    tegra_timer **timer2 = (void *) &tegra_timer_devs[1];
     uint32_t freq;
     uint32_t cmd;
 
@@ -278,11 +304,9 @@ static void * trace_viewer_cmd_handler(void *arg)
 
     return NULL;
 }
-#endif // TEGRA_TRACE
 
 void tegra_trace_init(void)
 {
-#ifdef TEGRA_TRACE
     SocketAddress *saddr;
     QemuThread trace_cmd_thread;
     static int sock = -1;
@@ -318,5 +342,5 @@ WAIT:
     printf("Waiting for trace viewer connection...\n");
     msgsock = qemu_accept(sock, NULL, NULL);
     g_assert(msgsock != -1);
-#endif // TEGRA_TRACE
 }
+#endif // TEGRA_TRACE && !USE_STDIO

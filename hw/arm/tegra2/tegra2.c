@@ -19,6 +19,7 @@
 
 #define CONFIG_ARCH_TEGRA_2x_SOC
 #define CONFIG_ARM_ARCH_TIMER
+//#define USE_CLUSTER
 
 #include "tegra_common.h"
 
@@ -52,7 +53,9 @@
 #include "apb/pmc/pmc.h"
 #include "ppsb/evp/evp.h"
 #include "apb/fuse/fuse.h"
+#ifdef USE_CLUSTER
 #include "hw/cpu/cluster.h"
+#endif
 
 #include "bundle/boot_iram.bin.h"
 #include "bundle/u_boot_dtb_tegra.bin.h"
@@ -173,13 +176,17 @@ static void tegra2_create_cpus(void)
 {
     int i;
 
+#ifdef USE_CLUSTER
     Object *cluster = object_new(TYPE_CPU_CLUSTER);
     qdev_prop_set_uint32(DEVICE(cluster), "cluster-id", 0);
+#endif
     
     for (i = 0; i < TEGRA2_CCPLEX_NCORES; i++) {
         Object *cpuobj = object_new(ARM_CPU_TYPE_NAME("cortex-a9"));
 
+#ifdef USE_CLUSTER
         object_property_add_child(cluster, "cpu[*]", cpuobj);
+#endif
 
         object_property_set_int(cpuobj, "reset-cbar", TEGRA_ARM_PERIF_BASE, &error_abort);
         object_property_set_bool(cpuobj, "has_el3", false, &error_abort);
@@ -189,19 +196,23 @@ static void tegra2_create_cpus(void)
         add_tegra_cpu(TEGRA_CCPLEX_CORE0 + i, CPU(cpuobj)->cpu_index);
     }
 
+#ifdef USE_CLUSTER
     qdev_realize(DEVICE(cluster), NULL, &error_fatal);
 
     /* BPMP also known as AVP Audio Video Processor or COP(processor) */
     cluster = object_new(TYPE_CPU_CLUSTER);
     qdev_prop_set_uint32(DEVICE(cluster), "cluster-id", 1);
+#endif
 
     Object *cpuobj = object_new(ARM_CPU_TYPE_NAME("arm7tdmi"));
-    object_property_add_child(cluster, "cpu[*]", cpuobj);
     object_property_set_bool(cpuobj, "start-powered-off", true, &error_abort);
     qdev_realize(DEVICE(cpuobj), NULL, &error_fatal);
     add_tegra_cpu(TEGRA_BPMP, CPU(cpuobj)->cpu_index);
 
+#ifdef USE_CLUSTER
+    object_property_add_child(cluster, "cpu[*]", cpuobj);
     qdev_realize(DEVICE(cluster), NULL, &error_fatal);
+#endif
 }
 
 static struct arm_boot_info tegra_board_binfo = {
