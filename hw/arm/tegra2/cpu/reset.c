@@ -151,7 +151,7 @@ void tegra_cpu_reset_deassert(int cpu_id, int flow)
         }
         else {
             if (cpu_id == TEGRA_BPMP)
-                arm_set_cpu_on(cs->cpu_index, 0x0, 0, 1, 0);
+                arm_set_cpu_on(cs->cpu_index, 0xf0010000, 0, 1, 0);
             else
                 arm_set_cpu_on(cs->cpu_index, 0xf0010000, 0, 3, 1);
         }
