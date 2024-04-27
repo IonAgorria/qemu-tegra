@@ -1,3 +1,36 @@
+============
+Tegra README
+============
+
+Build
+=====
+
+.. code-block:: shell
+
+  cd tegra2_qemu
+  mkdir build && cd build
+  ../configure --target-list=arm-softmmu --disable-werror
+  ninja
+
+Run
+===
+
+.. code-block:: shell
+
+  ./qemu-system-arm -M tegra2-qemu -m 1024 -kernel arch/arm/boot/zImage -dtb arch/arm/boot/dts/tegra20-qemu.dtb --append "earlyprintk=1 console=ttyS0" -serial stdio -net nic,model=lan9118 -net user -device usb-tablet -device usb-kbd
+
+* Specify SD card image path with ``-drive if=sd,file=sd.img``. See QEMU help for the rest of standard cmdline arguments.
+
+* Specify bootloader image path using ``-bootloader`` argument (optional).
+
+* Specify IRAM image path using ``-iram`` argument (optional).
+
+* Kernel image is loaded at fixed address 0x1000000. DTB is appended to the kernel.
+
+Kernel and device-tree are available at `<https://github.com/grate-driver/linux>`_.
+
+U-Boot is available at `<https://github.com/grate-driver/u-boot>`_, use ``qemu_tegra2_defconfig``.
+
 ===========
 QEMU README
 ===========
