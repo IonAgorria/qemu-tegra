@@ -4038,6 +4038,21 @@ SRST
     kernel on boot.
 ERST
 
+DEF("bootloader", HAS_ARG, QEMU_OPTION_bootloader, \
+    "-bootloader     use 'bootloader' as bootloader image\n", QEMU_ARCH_ARM)
+SRST
+``-bootloader file``
+    Path to bootloader image.
+ERST
+
+DEF("iram", HAS_ARG, QEMU_OPTION_iram, \
+    "-iram           use 'iram' as IRAM memory image\n", QEMU_ARCH_ARM)
+SRST
+``-iram file``
+    Path to Tegra IRAM file containing BCT.
+ERST
+
+
 SRST
 
 Finally you can also manually load images directly into the address
