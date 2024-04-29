@@ -2352,6 +2352,7 @@ enum arm_features {
     ARM_FEATURE_M_SECURITY, /* M profile Security Extension */
     ARM_FEATURE_M_MAIN, /* M profile Main Extension */
     ARM_FEATURE_V8_1M, /* M profile extras only in v8.1M and later */
+    ARM_FEATURE_NOCP15, /* ARM7TDMI, ARM7TDMI-S, ARM7EJ-S, and ARM9TDMI cores do not have a CP15 */
 };
 
 static inline int arm_feature(CPUARMState *env, int feature)
