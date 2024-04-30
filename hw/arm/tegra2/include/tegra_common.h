@@ -20,6 +20,8 @@
 #ifndef TEGRA_COMMON_H
 #define TEGRA_COMMON_H
 
+#define CONFIG_ARCH_TEGRA_2x_SOC
+
 #include "qemu/osdep.h"
 #include "hw/hw.h"
 #include "hw/qdev-properties.h"

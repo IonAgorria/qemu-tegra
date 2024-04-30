@@ -18,9 +18,7 @@
  */
 
 // Based on tegra2 device code by digetx.
-
-#define CONFIG_ARCH_TEGRA_21x_SOC
-
+#if 0
 #include "tegra_common.h"
 
 #include "hw/sysbus.h"
@@ -288,3 +286,4 @@ static void tegra_pinmuxaux_register_types(void)
 }
 
 type_init(tegra_pinmuxaux_register_types)
+#endif

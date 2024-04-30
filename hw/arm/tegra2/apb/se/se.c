@@ -19,7 +19,7 @@
 
 // Based on tegra2 device code by digetx.
 // This uses various definitions from: https://github.com/Atmosphere-NX/Atmosphere/blob/master/libraries/libexosphere/source/se/se_registers.hpp
-
+#if 0
 #ifdef CONFIG_GCRYPT
 #include <gcrypt.h>
 #endif
@@ -1413,3 +1413,4 @@ static void tegra_se_register_types(void)
 }
 
 type_init(tegra_se_register_types)
+#endif

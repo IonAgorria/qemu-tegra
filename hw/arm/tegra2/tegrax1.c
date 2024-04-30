@@ -18,6 +18,7 @@
  *  with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#if 0
 // Modified version of tegra2.c.
 
 #define CONFIG_ARCH_TEGRA_21x_SOC
@@ -1436,4 +1437,4 @@ static void tegrax1plus_machine_init(MachineClass *mc)
 
 DEFINE_MACHINE("tegrax1", tegrax1_machine_init)
 DEFINE_MACHINE("tegrax1plus", tegrax1plus_machine_init)
-
+#endif

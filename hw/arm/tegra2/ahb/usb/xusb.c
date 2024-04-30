@@ -22,8 +22,6 @@
 
 // NOTE: The memregion offsets/sizes used by qemu XHCI differs from what X1 uses.
 
-#define CONFIG_ARCH_TEGRA_21x_SOC
-
 #include "tegra_common.h"
 
 #include "iomap.h"

@@ -19,6 +19,7 @@
 
 // Based on tegra2 device code by digetx.
 
+#if 0
 #define CONFIG_ARM_ARCH_TIMER
 
 #include "tegra_common.h"
@@ -124,3 +125,4 @@ static void tegra_sysctr_register_types(void)
 }
 
 type_init(tegra_sysctr_register_types)
+#endif

@@ -17,8 +17,6 @@
  *  with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#define CONFIG_ARCH_TEGRA_21x_SOC
-
 #include "tegra_common.h"
 
 #include "hw/sysbus.h"
@@ -307,6 +305,7 @@ static const VMStateDescription vmstate_tegra_mc = {
     }
 };
 
+#if 0
 static uint32_t tegra_mc_regdef_tegrax1_reset_table[] = {
     TEGRA_REGDEF_TABLE_RESET(MC_INTSTATUS_0, 0x0, 0x00000000)
     TEGRA_REGDEF_TABLE_RESET(MC_INTMASK_0, 0x4, 0x00000000)
@@ -600,6 +599,7 @@ static uint32_t tegra_mc_regdef_tegrax1_reset_table[] = {
     TEGRA_REGDEF_TABLE_RESET(MC_LATENCY_ALLOWANCE_NVENC_0_0, 0x328, 0x00800023)
     TEGRA_REGDEF_TABLE_RESET(MC_LATENCY_ALLOWANCE_HDA_0_0, 0x318, 0x00800024)
 };
+#endif
 
 static uint64_t tegra_mc_priv_read(void *opaque, hwaddr offset,
                                    unsigned size)
@@ -1608,6 +1608,7 @@ static void tegra_mc_priv_reset(DeviceState *dev)
 
     memset(s->regs, 0, sizeof(s->regs));
 
+#if 0
     if (tegra_board >= TEGRAX1_BOARD) {
         s->emem_cfg_offset = EMEM_CFG_TEGRAX1_OFFSET;
         s->emem_adr_cfg_offset = EMEM_ADR_CFG_TEGRAX1_OFFSET;
@@ -1653,7 +1654,9 @@ static void tegra_mc_priv_reset(DeviceState *dev)
 
         //s->emem_cfg.reg32 = s->ram_size_kb / SZ_1K; // BPMP bootloader initializes this, so this should not be touched unless emulation starts post-bootloader.
     }
-    else {
+    else
+#endif
+    {
         s->emem_cfg_offset = EMEM_CFG_TEGRA2_OFFSET;
         s->emem_cfg.reg32 = s->ram_size_kb;
 

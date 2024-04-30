@@ -19,8 +19,6 @@
 
 // Based on tegra2 device code by digetx.
 
-#define CONFIG_ARCH_TEGRA_21x_SOC
-
 #include "tegra_common.h"
 
 #include "hw/sysbus.h"
@@ -219,11 +217,13 @@ static const MemoryRegionOps tegra_sb_mem_ops = {
     .endianness = DEVICE_NATIVE_ENDIAN,
 };
 
+#ifdef TEGRA_IPATCH_SIZE
 static const MemoryRegionOps tegra_ipatch_mem_ops = {
     .read = tegra_ipatch_priv_read,
     .write = tegra_ipatch_priv_write,
     .endianness = DEVICE_NATIVE_ENDIAN,
 };
+#endif
 
 static const MemoryRegionOps tegra_irom_mem_ops = {
     .read = tegra_irom_priv_read,
@@ -239,12 +239,16 @@ static void tegra_sb_priv_realize(DeviceState *dev, Error **errp)
 
     memory_region_init_io(&s->iomem, OBJECT(dev), &tegra_sb_mem_ops, s,
                           "tegra.sb", TEGRA_SB_SIZE);
+#ifdef TEGRA_IPATCH_SIZE
     memory_region_init_io(&s->ipatch_iomem, OBJECT(dev), &tegra_ipatch_mem_ops, s,
                           "tegra.ipatch", TEGRA_IPATCH_SIZE);
+#endif
     memory_region_init_io(&s->irom_iomem, OBJECT(dev), &tegra_irom_mem_ops, s,
                           "tegra.irom", TEGRA_IROM_SIZE);
     sysbus_init_mmio(SYS_BUS_DEVICE(dev), &s->iomem);
+#ifdef TEGRA_IPATCH_SIZE
     sysbus_init_mmio(SYS_BUS_DEVICE(dev), &s->ipatch_iomem);
+#endif
     sysbus_init_mmio(SYS_BUS_DEVICE(dev), &s->irom_iomem);
 }
 

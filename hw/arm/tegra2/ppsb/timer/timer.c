@@ -69,6 +69,7 @@ static void tegra_timer_alarm(void *opaque)
 
     s->irq_sts = 1;
 
+#ifndef CONFIG_ARCH_TEGRA_2x_SOC
     // Handle the watchdog timers which are configured for using the current timer.
     for (size_t i=0; i<ARRAY_SIZE(tegra_wdt_devs); i++) {
         tegra_wdt *wdt = tegra_wdt_devs[i];
@@ -77,6 +78,7 @@ static void tegra_timer_alarm(void *opaque)
             tegra_wdt_alarm(wdt);
         }
     }
+#endif
 }
 
 uint64_t tegra_timer_get_count(void *opaque)

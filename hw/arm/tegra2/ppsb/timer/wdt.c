@@ -22,6 +22,8 @@
 
 #include "tegra_common.h"
 
+#ifndef CONFIG_ARCH_TEGRA_2x_SOC
+
 #include "hw/ptimer.h"
 #include "hw/sysbus.h"
 #include "qemu/main-loop.h"
@@ -286,3 +288,4 @@ static void tegra_wdt_register_types(void)
 }
 
 type_init(tegra_wdt_register_types)
+#endif

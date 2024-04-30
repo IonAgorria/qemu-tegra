@@ -18,7 +18,7 @@
  */
 
 // Based on tegra2 device code by digetx.
-
+#if 0
 #include "tegra_common.h"
 
 #include "hw/sysbus.h"
@@ -211,3 +211,4 @@ static void tegra_ape_register_types(void)
 }
 
 type_init(tegra_ape_register_types)
+#endif

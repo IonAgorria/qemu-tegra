@@ -19,8 +19,6 @@
 
 // Based on tegra2 device code by digetx.
 
-#define CONFIG_ARCH_TEGRA_21x_SOC
-
 #include "tegra_common.h"
 
 #include "hw/sysbus.h"

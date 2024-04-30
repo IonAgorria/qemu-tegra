@@ -24,12 +24,12 @@
 
 #include "sizes.h"
 
-// Default to CONFIG_ARCH_TEGRA_21x_SOC.
+// Default to CONFIG_ARCH_TEGRA_2x_SOC.
 #if !defined(CONFIG_ARCH_TEGRA_APE) && \
 	!defined(CONFIG_ARCH_TEGRA_2x_SOC) && !defined(CONFIG_ARCH_TEGRA_3x_SOC) \
 	&& !defined(CONFIG_ARCH_TEGRA_11x_SOC) && !defined(CONFIG_ARCH_TEGRA_12x_SOC) \
 	&& !defined(CONFIG_ARCH_TEGRA_21x_SOC)
-#define CONFIG_ARCH_TEGRA_21x_SOC
+#define CONFIG_ARCH_TEGRA_2x_SOC
 #define CONFIG_ARM_ARCH_TIMER
 #endif
 
