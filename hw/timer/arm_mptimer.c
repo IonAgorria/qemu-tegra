@@ -222,7 +222,7 @@ static void arm_mptimer_state_change_handler(void *opaque, bool running, RunStat
     ARMMPTimerState *s = opaque;
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(s->timerblock); i++) {
+    for (i = 0; i < s->num_cpu; i++) {
         TimerBlock *tb = &s->timerblock[i];
 
         ptimer_transaction_begin(tb->timer);
