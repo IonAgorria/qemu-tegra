@@ -48,24 +48,41 @@ typedef struct TegraI2CState {
     bool is_dvc;
     uint32_t dvc_ctrl[3];
     uint32_t dvc_status;
-    uint16_t config;
-    uint8_t sl_config;
-    uint8_t sl_addr1;
-    uint8_t sl_addr2;
+    uint32_t config;
+    uint32_t cmd_addr0;
+    uint32_t cmd_addr1;
+    uint32_t cmd_data1;
+    uint32_t cmd_data2;
+    uint32_t status;
+    uint32_t sl_config;
+    uint32_t sl_addr1;
+    uint32_t sl_addr2;
+    uint32_t tlow_sext;
+    uint32_t sl_delay_count;
     uint32_t packet_transfer_status;
-    uint8_t fifo_control;
-    uint8_t int_mask;
-    uint8_t int_status;
-    uint16_t clk_divisor;
+    uint32_t fifo_control;
+    uint32_t int_mask;
+    uint32_t int_status;
+    uint32_t clk_divisor;
     uint8_t rx_fifo[TEGRA_I2C_FIFO_SIZE];
+    uint32_t bus_clear_config;
+    uint32_t bus_clear_status;
+    uint32_t config_load;
+    uint32_t regs[0x10>>2];
     int32_t rx_ptr;
     int32_t rx_len;
-    uint8_t payload_size;
-    uint8_t payload_transfered;
+    uint32_t payload_size;
+    uint32_t payload_transfered;
     uint32_t header;
     uint32_t header_specific;
     TegraI2CFSM state;
     qemu_irq irq;
 } TegraI2CState;
+
+static inline I2CBus *tegra_i2c_get_bus(void *opaque)
+{
+    TegraI2CState *s = TEGRA_I2C(opaque);
+    return s->bus;
+}
 
 #endif
